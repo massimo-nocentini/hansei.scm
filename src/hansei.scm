@@ -10,6 +10,9 @@
    srfi-69
    aux)
 
+  (define-syntax probcc-pair-C (syntax-rules () ((_ p body ...) `((C ,(τ body ...)) ,p))))
+  (define (probcc-pair-V p v) `((V ,v) ,p))
+
   (define-syntax letprobccpair
    (syntax-rules () 
     ((_ (((flag payload) p) probpair) body ...) (let* ((slot (car probpair))
@@ -47,9 +50,11 @@
                              ((C t) (cond 
                                      (down (loop p depth down rest
                                             (loop p*pt (add1 depth) (< depth maxdepth) (t) susp)))
-                                     (else (loop p depth down rest (cons `((C ,t) ,p*pt) susp)))))))))))))
+                                     (else (let1 (s (cons (probcc-pair-C p*pt (t)) susp)) 
+                                            (loop p depth down rest s)))))))))))))
     (let* ((susp (loop 1 0 #t choices '()))
-           (folded (hash-table-fold ans (λ (v p l) (cons `((V ,v) ,p) l)) susp)))
+           (f (λ (v p l) (cons (probcc-pair-V p v) l)))
+           (folded (hash-table-fold ans f susp)))
      (sort folded (λ (a b) (> (cadr a) (cadr b)))))))
 
   (define (probcc-normalize choices)
@@ -60,7 +65,7 @@
   (define ((probcc-distribution/k distribution) k)
     (map (λ (pair)
           (letcar&cdr (((v p) pair))
-           `((C ,(τ (k v))) ,(car p))))
+           (probcc-pair-C (car p) (k v))))
          distribution))
   (define probcc-distribution (o callshiftcc probcc-distribution/k))
 
@@ -69,12 +74,12 @@
              (f (λ (probpair)
                  (letprobccpair ((slot p) probpair)
                   (cond-probccslot slot
-                   ((V v) `((C ,(τ (k v))) ,p))
-                   ((C t) `((C ,(τ (make-choices (t)))) ,p)))))))
+                   ((V v) (probcc-pair-C p (k v)))
+                   ((C t) (probcc-pair-C p (make-choices (t)))))))))
      (make-choices choices)))
   (define probcc-reflect (o callshiftcc probcc-reflect/k))
 
-  (define (probcc-unit v) `(((V ,v) 1)))
+  (define (probcc-unit v) (list (probcc-pair-V 1 v)))
   (define (probcc-reify0 m) (resetcc (probcc-unit (m))))
   (define (probcc-bernoulli t f p) (probcc-distribution `((,t ,p) (,f ,(- 1 p)))))
   (define (probcc-coin p) (probcc-bernoulli #t #f p))

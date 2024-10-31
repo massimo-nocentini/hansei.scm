@@ -1,0 +1,6 @@
+
+((author "Massimo Nocentini")
+ (synopsis "Hansei probabilistic language.")
+ (license "MIT")
+ (components
+  (extension hansei)))

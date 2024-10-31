@@ -1,0 +1,7 @@
+src/hansei.build.sh
+src/hansei.import.scm
+src/hansei.import.so
+src/hansei.install.sh
+src/hansei.link
+src/hansei.so
+src/hansei.static.o

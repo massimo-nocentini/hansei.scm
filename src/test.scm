@@ -22,12 +22,10 @@
                        (and (probcc-coin 0.8) sprinkler)
                        (probcc-coin 0.1))))
             (probcc-when grass-is-wet rain))))
-      (⊦= '(((V #f) 0.322) ((V #t) 0.2838)) (probcc-explore +inf.0 grass-model)))
+      (⊦= (list (probcc-value 0.322 #f) (probcc-value 0.2838 #t)) 
+          (probcc-explore +inf.0 grass-model)))
 
          ((test/procc/flip-xor-model _)
-
-         
-
       (define flipxor-model
        (probcc-model
         (let loop ((p 0.6) (n 10))

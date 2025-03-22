@@ -4,4 +4,4 @@ test:
 	csi -s test.scm
 
 install:
-	chicken-install
+	chicken-install -sudo

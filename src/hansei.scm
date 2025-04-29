@@ -1,4 +1,6 @@
 
+; use parameters to generalize constants and arithmetic operations
+
 (module hansei *
 
   (import scheme 
@@ -13,24 +15,21 @@
   (define-syntax probcc-τ (syntax-rules () ((_ p body ...) `((C ,(τ body ...)) ,p))))
   (define (probcc-value p v) `((V ,v) ,p))
 
-  (define-syntax letprobccpair
-   (syntax-rules () 
-    ((_ (((flag payload) p) probpair) body ...) (let* ((slot (car probpair))
-                                                       (p (cadr probpair))
-                                                       (flag (car slot))
-                                                       (payload (cadr slot)))
-                                                 body ...))
-    ((_ ((slot p) probpair) body ...) (let* ((slot (car probpair))
-                                             (p (cadr probpair)))
-                                       body ...))))
+  (define-syntax let1/probccpair
+    (syntax-rules () 
+      ((_ ((slot p) probpairexpr) body ...) (let* ((probpair probpairexpr)
+						   (slot (car probpair))
+						   (p (cadr probpair)))
+					      body ...))))
 
-  (define-syntax cond-probccslot
+  (define-syntax cond/probccslot
    (syntax-rules (V C)
-    ((_ slot 
+    ((_ slotexpr 
       ((V v) vbody ...)
       ((C t) cbody ...))
-     (let ((flag (car slot))
-           (payload (cadr slot)))
+     (let* ((slot slotexpr)
+	    (flag (car slot))
+	    (payload (cadr slot)))
       (cond
        ((equal? flag 'V) (let1 (v payload) vbody ...))
        ((equal? flag 'C) (let1 (t payload) cbody ...))
@@ -41,10 +40,10 @@
             (loop (λ (p depth down choices susp)
                    (cond
                     ((null? choices) susp)
-                    (else (letprobccpair ((slot pt) (car choices)) 
-                           (let* ((p*pt (* p pt))
-                                  (rest (cdr choices)))
-                            (cond-probccslot slot
+                    (else (let1/probccpair ((slot pt) (car choices)) 
+                           (let ((p*pt (* p pt))
+                                 (rest (cdr choices)))
+                            (cond/probccslot slot
                              ((V v) (hash-table-update!/default ans v (λ (w) (+ w p*pt)) 0)
                                     (loop p depth down rest susp))
                              ((C t) (cond 
@@ -72,27 +71,29 @@
   (define ((probcc-reflect/k choices) k)
     (letrec ((make-choices (λ (pv) (map f pv)))
              (f (λ (probpair)
-                 (letprobccpair ((slot p) probpair)
-                  (cond-probccslot slot
+                 (let1/probccpair ((slot p) probpair)
+                  (cond/probccslot slot
                    ((V v) (probcc-τ p (k v)))
                    ((C t) (probcc-τ p (make-choices (t)))))))))
      (make-choices choices)))
   (define probcc-reflect (o callshiftcc probcc-reflect/k))
 
+  ; Events and random variables.
+  (define (probcc-impossible) (probcc-distribution '()))
   (define (probcc-unit v) (list (probcc-value 1 v)))
-  (define (probcc-reify0 m) (resetcc (probcc-unit (m))))
   (define (probcc-bernoulli t f p) (probcc-distribution `((,t ,p) (,f ,(- 1 p)))))
   (define (probcc-coin p) (probcc-bernoulli #t #f p))
-  (define (probcc-impossible) (probcc-distribution '()))
+
   (define-syntax probcc-when
    (syntax-rules ()
     ((_ test body ...) (cond (test body ...) (else (probcc-impossible))))))
   (define-syntax probcc-model
    (syntax-rules ()
-    ((_ body ...) (probcc-reify0 (τ body ...)))))
+    ;((_ body ...) (probcc-reify0 (τ body ...))))) ;provided that you define: (define (probcc-reify0 m) (resetcc (probcc-unit (m))))
+    ((_ body ...) (resetcc (probcc-unit (begin body ...))))))
   (define-syntax probcc-inference-exact
    (syntax-rules ()
-    ((_ body ...) (probcc-explore +inf.0 (probcc-model body ...)))))
+    ((_ body ...) (probcc-normalize (probcc-explore +inf.0 (probcc-model body ...))))))
   (define-syntax λ-probcc-bucket
    (syntax-rules ()
     ((_ args body ...) (letrec ((f (λ args body ...))
@@ -102,8 +103,8 @@
   (define (probcc-leaves choices)
     (letrec ((L (λ (choices count)
                  (let1 (F (λ (probpair acc) 
-                           (letprobccpair ((slot p) probpair)
-                            (cond-probccslot slot
+                           (let1/probccpair ((slot p) probpair)
+                            (cond/probccslot slot
                             ((V v) (add1 acc))
                             ((C t) (L (t) acc))))))
                   (foldr F count choices)))))

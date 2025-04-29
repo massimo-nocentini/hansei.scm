@@ -58,13 +58,21 @@
 	       (structure/section "Implementation")
 	       (code/scheme/file "../hansei.scm")))
 
-  ((test/procc/simple-model _)
-   (⊦= '(((V (#t #t)) 0.36) ((V (#t #f)) 0.24) ((V (#f #t)) 0.24))
+  ((test/procc/coin-model _)
+   (⊦= '(((V (#t #t)) 0.36) ((V (#t #f)) 0.24) ((V (#f #t)) 0.24) ((V (#f #f)) 0.16))
          (probcc-inference-exact
            (let* ((p 0.6)
                   (x (probcc-coin p))
                   (y (probcc-coin p)))
-             (probcc-when (or x y) (list x y))))))
+	     (list x y)))))
+
+  ((test/procc/coin-model/when _)
+   (⊦= '(((V (#t #t)) 0.428571428571429) ((V (#t #f)) 0.285714285714286) ((V (#f #t)) 0.285714285714286))
+         (probcc-inference-exact
+           (let* ((p 0.6)
+                  (x (probcc-coin p))
+                  (y (probcc-coin p)))
+	     (probcc-when (or x y) (list x y))))))
 
 
   ((test/procc/grass-model _)

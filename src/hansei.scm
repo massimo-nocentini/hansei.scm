@@ -49,7 +49,7 @@
                              ((C t) (cond 
                                      (down (loop p depth down rest
                                             (loop p*pt (add1 depth) (< depth maxdepth) (t) susp)))
-                                     (else (let1 (s (cons (probcc-τ p*pt (t)) susp)) 
+                                     (else (let1 (s (cons (probcc-τ p*pt (t)) susp))
                                             (loop p depth down rest s)))))))))))))
     (let* ((susp (loop 1 0 #t choices '()))
            (f (λ (v p l) (cons (probcc-value p v) l)))
@@ -61,22 +61,22 @@
            (N (λ (each) (list (car each) (exact->inexact (/ (cadr each) tot))))))
       (map N choices)))
 
-  (define ((probcc-distribution/k distribution) k)
-    (map (λ (pair)
-          (letcar&cdr (((v p) pair))
-           (probcc-τ (car p) (k v))))
-         distribution))
-  (define probcc-distribution (o callshiftcc probcc-distribution/k))
+  (define (probcc-distribution distribution)
+    (letcc/shift k
+		 (map (λ (pair)
+			 (letcar&cdr (((v p) pair))
+				     (probcc-τ (car p) (k v))))
+		      distribution)))
 
-  (define ((probcc-reflect/k choices) k)
-    (letrec ((make-choices (λ (pv) (map f pv)))
-             (f (λ (probpair)
-                 (let1/probccpair ((slot p) probpair)
-                  (cond/probccslot slot
-                   ((V v) (probcc-τ p (k v)))
-                   ((C t) (probcc-τ p (make-choices (t)))))))))
-     (make-choices choices)))
-  (define probcc-reflect (o callshiftcc probcc-reflect/k))
+  (define (probcc-reflect choices)
+    (letcc/shift k
+		 (letrec ((make-choices (λ (pv) (map f pv)))
+			  (f (λ (probpair)
+				(let1/probccpair ((slot p) probpair)
+						 (cond/probccslot slot
+								  ((V v) (probcc-τ p (k v)))
+								  ((C t) (probcc-τ p (make-choices (t)))))))))
+		   (make-choices choices))))
 
   ; Events and random variables.
   (define (probcc-impossible) (probcc-distribution '()))
@@ -86,18 +86,18 @@
 
   (define-syntax probcc-when
    (syntax-rules ()
-    ((_ test body ...) (cond (test body ...) (else (probcc-impossible))))))
-  (define-syntax probcc-model
-   (syntax-rules ()
-    ;((_ body ...) (probcc-reify0 (τ body ...))))) ;provided that you define: (define (probcc-reify0 m) (resetcc (probcc-unit (m))))
-    ((_ body ...) (resetcc (probcc-unit (begin body ...))))))
-  (define-syntax probcc-inference-exact
-   (syntax-rules ()
-    ((_ body ...) (probcc-normalize (probcc-explore +inf.0 (probcc-model body ...))))))
+    ((_ test body ...) (cond 
+			 (test body ...) 
+			 (else (probcc-impossible))))))
+
+  (define (probcc-reify/0 model) (resetcc (probcc-unit (model))))
+  (define ((probcc-reify model) depth) (probcc-explore depth (probcc-reify/0 model)))
+  (define (probcc-reify/exact model) ((probcc-reify model) +inf.0))
+
   (define-syntax λ-probcc-bucket
    (syntax-rules ()
     ((_ args body ...) (letrec ((f (λ args body ...))
-                                (bucket (λ-memo bargs (probcc-inference-exact (apply f bargs)))))
+                                (bucket (λ-memo bargs (probcc-reify/exact (τ (apply f bargs))))))
                         (o probcc-reflect bucket)))))
 
   (define (probcc-leaves choices)

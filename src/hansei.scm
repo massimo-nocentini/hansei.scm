@@ -56,6 +56,19 @@
            (folded (hash-table-fold ans f susp)))
      (sort folded (λ (a b) (> (cadr a) (cadr b)))))))
 
+  (define (probcc-next-value choices)
+    (cond
+      ((null? choices) '())
+      (else (let1/probccpair ((slot pt) (car choices)) 
+			     (cond/probccslot slot
+					      ((V v) (probcc-value pt v))
+					      ((C t) (probcc-next-value
+						       (append (cdr choices)
+							       (map (λ (pair)
+								       (let1/probccpair ((slot p) pair)
+											`(,slot ,(* p pt))))
+								    (t))))))))))
+
   (define (probcc-normalize choices)
     (let* ((tot (foldr (λ (each t) (+ t (cadr each))) 0 choices))
            (N (λ (each) (list (car each) (exact->inexact (/ (cadr each) tot))))))
@@ -97,7 +110,9 @@
   (define-syntax λ-probcc-bucket
    (syntax-rules ()
     ((_ args body ...) (letrec ((f (λ args body ...))
-                                (bucket (λ-memo bargs (probcc-reify/exact (τ (apply f bargs))))))
+                                (bucket (λ-memo bargs 
+						(probcc-reify/exact 
+						  (τ (apply f bargs))))))
                         (o probcc-reflect bucket)))))
 
   (define (probcc-leaves choices)

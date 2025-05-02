@@ -35,62 +35,73 @@
 
              (structure/section "Implementation")
 
-	     (p "The first implementation of our language uses the probability
+             (p "The first implementation of our language uses the probability
 		monad that represents a stochastic computation as a lazy search
 		tree. That is, our implementation uses the type constructor " (code/inline "pV") 
-		" defined below.  "
-		(code/lang "" 
-			"type 'a vc = V of 'a | C of (unit -> 'a pV)\n"
-			"and 'a pV = (prob * 'a vc) list")
-		"Each node in a tree is a weighted list of branches. The empty
+                " defined below.  "
+                (code/lang "" 
+                           "type 'a vc = V of 'a | C of (unit -> 'a pV)\n"
+                           "and 'a pV = (prob * 'a vc) list")
+                "Each node in a tree is a weighted list of branches. The empty
 		list denotes failure, and a singleton list " (code/inline "[(p, V v)]") 
-		" denotes a deterministic successful outcome" (code/inline v) "with the
+                " denotes a deterministic successful outcome" (code/inline v) "with the
 		probability mass " (code/inline p) ". A branch of the form "
-		(code/inline "V v") " is a leaf node
+                (code/inline "V v") " is a leaf node
 		that describes a possible successful outcome, whereas a branch
 		of the form " (code/inline "C thunk") " is not yet explored.
 		The intended meaning of a search tree of type " (code/inline
-		"'a pV") " is a discrete probability distribution over values of type "
-	     (code/inline "'a") ". ")
+                                                                                                                                                                                                                                                                  "'a pV") " is a discrete probability distribution over values of type "
+                (code/inline "'a") ". ")
 
              (code/scheme/file "../hansei.scm")))
 
   ((test/procc/coin-model _)
    (⊦= '(((V ((x #t) (y #t))) 0.36)
-	     ((V ((x #t) (y #f))) 0.24)
-	     ((V ((x #f) (y #t))) 0.24)
-	     ((V ((x #f) (y #f))) 0.16))
-       (probcc-reify/exact
-	 (τ
-	   (let* ((p 0.6)
-		  (x (probcc-coin p))
-		  (y (probcc-coin p)))
-	     `((x ,x) (y ,y)))))))
+           ((V ((x #t) (y #f))) 0.24)
+           ((V ((x #f) (y #t))) 0.24)
+           ((V ((x #f) (y #f))) 0.16))
+         (probcc-normalize
+           (probcc-reify/exact
+             (τ
+               (let* ((p 0.6)
+                      (x (probcc-coin p))
+                      (y (probcc-coin p)))
+                 `((x ,x) (y ,y)))))))
+   `(doc (p "Joint distribution of tossing two " (i "biased") 
+            " coins, where head has probability " (code/inline 0.6)
+            " to appear.")))
 
   ((test/procc/coin-model/when _)
-   (⊦= '(((V (#t #t)) 0.36) ((V (#t #f)) 0.24) ((V (#f #t)) 0.24))
-       (probcc-reify/exact
-	 (τ
-	   (let* ((p 0.6)
-		  (x (probcc-coin p))
-		  (y (probcc-coin p)))
-	     (probcc-when (or x y) (list x y)))))))
+   (⊦= '(((V (#t #t)) 0.428571428571429)
+           ((V (#t #f)) 0.285714285714286)
+           ((V (#f #t)) 0.285714285714286))
+         (probcc-normalize
+           (probcc-reify/exact
+             (τ
+               (let* ((p 0.6)
+                      (x (probcc-coin p))
+                      (y (probcc-coin p)))
+                 (probcc-when (or x y) (list x y)))))))
+   `(doc (p "Slightly variation of the previous test, here it has been " 
+            (b "observed") " that " (i "at least one head") " appeared.")))
 
   ((test/procc/grass-model _)
    (define-τ grass-model
-       (let* ((rain (probcc-coin 0.3))
-              (sprinkler (probcc-coin 0.5))
-              (grass-is-wet
-                (or (and (probcc-coin 0.9) rain)
-                    (and (probcc-coin 0.8) sprinkler)
-                    (probcc-coin 0.1))))
-         (probcc-when grass-is-wet `(rain ,rain))))
-   (⊦= (list (probcc-value 0.322 '(rain #f)) (probcc-value 0.2838 '(rain #t)))
-         (probcc-reify/exact grass-model))
+     (let* ((rain (probcc-coin 0.3))
+            (sprinkler (probcc-coin 0.5))
+            (grass-is-wet
+              (or (and (probcc-coin 0.9) rain)
+                  (and (probcc-coin 0.8) sprinkler)
+                  (probcc-coin 0.1))))
+       (probcc-when grass-is-wet `(rain ,rain))))
+   (define result (probcc-reify/exact grass-model))
+   (⊦= (list (probcc-value 0.322 '(rain #f)) 
+               (probcc-value 0.2838 '(rain #t)))
+         result)
    `(doc
       (cite/quote
         "Oleg Kiselyov"
-	"The canonical example is the grass model, with three random variables
+        "The canonical example is the grass model, with three random variables
 	representing the events of rain, of a switched-on sprinkler and wet
 	grass. The (a priori) probabilities of the first two events are judged
 	to be 30% and 50% correspondingly. Probabilities are non-negative real
@@ -112,20 +123,25 @@
 	inference. Often we are interested in the distribution conditioned on
 	the fact that some random variables have been observed to hold a
 	particular value. In our example, having observed that the grass is
-	wet, we want to find out the chance it was raining on that day. ")))
+	wet, we want to find out the chance it was raining on that day. ")
+      (p "The solution to this problem shows the probability distribution of raining,
+	   provided that " (i "has been observed a wet grass:")
+         (code/scheme ,(probcc-normalize result))
+         "as required. The following test defines and captures this problem.")))
 
 
   ((test/procc/grass-model/complete _)
    (define-τ grass-model
-       (let* ((rain (probcc-coin 0.3))
-              (sprinkler (probcc-coin 0.5))
-              (grass-is-wet
-                (or (and (probcc-coin 0.9) rain)
-                    (and (probcc-coin 0.8) sprinkler)
-                    (probcc-coin 0.1))))
-         `((rain ,rain) 
-	   (sprinkler ,sprinkler)
-	   (grass-is-wet ,grass-is-wet))))
+     (let* ((rain (probcc-coin 0.3))
+            (sprinkler (probcc-coin 0.5))
+            (grass-is-wet
+              (or (and (probcc-coin 0.9) rain)
+                  (and (probcc-coin 0.8) sprinkler)
+                  (probcc-coin 0.1))))
+       `((rain ,rain) 
+         (sprinkler ,sprinkler)
+         (grass-is-wet ,grass-is-wet))))
+   (define result (probcc-reify/exact grass-model))
    (⊦= '(((V ((rain #f) (sprinkler #f) (grass-is-wet #f))) 0.315)
            ((V ((rain #f) (sprinkler #t) (grass-is-wet #t))) 0.287)
            ((V ((rain #t) (sprinkler #t) (grass-is-wet #t))) 0.1473)
@@ -134,14 +150,19 @@
            ((V ((rain #f) (sprinkler #f) (grass-is-wet #t))) 0.035)
            ((V ((rain #t) (sprinkler #f) (grass-is-wet #f))) 0.0135)
            ((V ((rain #t) (sprinkler #t) (grass-is-wet #f))) 0.0027)) 
-         (probcc-reify/exact grass-model)))
+         result)
+   (⊦= (probcc-normalize result) result)
+   `(doc (p "If we remove the assumption that " 
+            (i "has been observed a wet grass")
+            ", then we have the joint probability distribution of " 
+            (i "all") " variables:")))
 
   ((test/procc/flip-xor-model _)
    (define-τ flipxor-model
-       (let loop ((p 0.6) (n 10))
-         (cond
-           ((equal? 1 n) (probcc-coin p))
-           (else (not (equal? (probcc-coin (- 1 p)) (loop p (sub1 n))))))))
+     (let loop ((p 0.6) (n 10))
+       (cond
+         ((equal? 1 n) (probcc-coin p))
+         (else (not (equal? (probcc-coin (- 1 p)) (loop p (sub1 n))))))))
 
    (let1 (res (probcc-reify/exact flipxor-model))
          (⊦= '(((V #t) 0.500000051200001) ((V #f) 0.4999999488)) res)
@@ -150,14 +171,14 @@
   ((test/procc/flip-xor-model/middle _)
 
    (define (flipxor-model c p)
-       (letrec ((loop (λ (n)
-			 (τ
+     (letrec ((loop (λ (n)
+                        (τ
                           (cond
                             ((equal? 1 n) (probcc-coin p))
                             (else (not (equal? (probcc-coin (- 1 p)) 
-                                               (probcc-reflect 
-						 (probcc-reify/exact (loop (sub1 n))))))))))))
-         (loop c)))
+                                               (probcc-reflect
+                                                 (probcc-reify/exact (loop (sub1 n))))))))))))
+       (loop c)))
 
    (let* ((tree (flipxor-model 10 0.6))
           (res (probcc-reify/exact tree)))
@@ -183,6 +204,7 @@
   )
 
 (unittest/✓ hanseitest)
+
 
 
 

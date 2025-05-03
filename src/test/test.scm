@@ -1,5 +1,7 @@
 
-(import unittest aux hansei)
+(import 
+  (chicken sort)
+  unittest aux hansei srfi-1)
 
 (define-suite hanseitest
 
@@ -157,15 +159,53 @@
             ", then we have the joint probability distribution of " 
             (i "all") " variables:")))
 
-  ((test/procc/flip-xor-model _)
-   (define-τ flipxor-model
-     (let loop ((p 0.6) (n 10))
+  ((test/uniform/range _)
+   (⊦= '(((V 1) 1/8)
+           ((V 2) 1/8)
+           ((V 3) 1/8)
+           ((V 4) 1/8)
+           ((V 5) 1/8)
+           ((V 6) 1/8)
+           ((V 7) 1/8)
+           ((V 8) 1/8)) 
+       (sort (probcc-reify/exact (τ (probcc-uniform/range 1 8)))
+	     (λ (a b) (< (cadr (car a)) (cadr (car b)))))))
+
+  ((test/geometric _)
+   (define result ((probcc-reify (τ (probcc-geometric 0.85))) 5))
+   (define t6 (cadr (car (sixth result))))
+   (define t7 (cadr (car (seventh result))))
+   (define t8 (cadr (car (eighth result))))
+   (⊦= `(((V 0) 0.85)
+           ((V 1) 0.1275)
+           ((V 2) 0.019125)
+           ((V 3) 0.00286875)
+           ((V 4) 0.0004303125)
+           ((C ,t6) 6.4546875e-05)
+           ((C ,t7) 9.68203125000001e-06)
+           ((C ,t8) 1.70859375e-06))
+       result))
+
+  ((test/procc/flip _)
+   (define-τ model
+     (let loop ((p 0.5) (n 10))
        (cond
          ((equal? 1 n) (probcc-coin p))
-         (else (not (equal? (probcc-coin (- 1 p)) (loop p (sub1 n))))))))
+         (else (and (probcc-coin p) (loop p (sub1 n)))))))
+
+   (let1 (res (probcc-reify/exact model))
+         (⊦= '(((V #f) 0.9990234375) ((V #t) 0.0009765625)) res)
+         (⊦= 11 (probcc-leaves (probcc-reify/0 model)))))
+
+  ((test/procc/flip-xor-model _)
+   (define-τ flipxor-model
+     (let loop ((p 0.5) (n 10))
+       (cond
+         ((equal? 1 n) (probcc-coin p))
+         (else (not (equal? (probcc-coin p) (loop p (sub1 n))))))))
 
    (let1 (res (probcc-reify/exact flipxor-model))
-         (⊦= '(((V #t) 0.500000051200001) ((V #f) 0.4999999488)) res)
+         (⊦= '(((V #t) 0.5) ((V #f) 0.5)) res)
          (⊦= 1024 (probcc-leaves (probcc-reify/0 flipxor-model)))))
 
   ((test/procc/flip-xor-model/middle _)
@@ -175,14 +215,15 @@
                         (τ
                           (cond
                             ((equal? 1 n) (probcc-coin p))
-                            (else (not (equal? (probcc-coin (- 1 p)) 
+                            (else (not (equal? (probcc-coin p) 
                                                (probcc-reflect
-                                                 (probcc-reify/exact (loop (sub1 n))))))))))))
+                                                 (probcc-reify/exact 
+						   (loop (sub1 n))))))))))))
        (loop c)))
 
-   (let* ((tree (flipxor-model 10 0.6))
+   (let* ((tree (flipxor-model 10 0.5))
           (res (probcc-reify/exact tree)))
-     (⊦= '(((V #t) 0.5000000512) ((V #f) 0.4999999488)) res)
+     (⊦= '(((V #t) 0.5) ((V #f) 0.5)) res)
      (⊦= 4 (probcc-leaves (probcc-reify/0 tree)))))
 
   ((test/procc/flip-xor-model/bucket _)

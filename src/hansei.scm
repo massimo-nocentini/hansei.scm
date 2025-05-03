@@ -96,6 +96,25 @@
   (define (probcc-unit v) (list (probcc-value 1 v)))
   (define (probcc-bernoulli t f p) (probcc-distribution `((,t ,p) (,f ,(- 1 p)))))
   (define (probcc-coin p) (probcc-bernoulli #t #f p))
+  (define (probcc-uniform n)
+    (cond
+      ((equal? n 1) 0)
+      ((> n 1) (letrec ((p (/ 1 n))
+			(loop (λ (pacc acc i)
+				 (if (zero? i)
+				   (probcc-distribution (cons `(,i ,(- 1 pacc)) acc))
+				   (loop (+ pacc p) (cons `(,i ,p) acc) (sub1 i))))))
+		 (loop 0 '() (sub1 n))))
+      (else (error `(non-positive count ,n)))))
+
+  (define (probcc-uniform/range low high)
+    (+ low (probcc-uniform (add1 (- high low)))))
+
+  (define (probcc-geometric p)
+    (letrec ((loop (λ (n)
+		      (list (probcc-τ p (list (probcc-value 1 n)))
+			    (probcc-τ (- 1 p) (loop (add1 n)))))))
+      (probcc-reflect (loop 0))))
 
   (define-syntax probcc-when
    (syntax-rules ()

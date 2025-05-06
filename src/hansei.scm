@@ -12,6 +12,12 @@
    srfi-69
    aux)
 
+  (define op/times (make-parameter *))
+  (define op/plus (make-parameter +))
+  (define op/subtract (make-parameter -))
+  (define op/divide (make-parameter (λ (m n) (exact->inexact (/ m n)))))
+  (define op/greater (make-parameter >))
+
   (define-syntax probcc-τ (syntax-rules () ((_ p body ...) `((C ,(τ body ...)) ,p))))
   (define (probcc-value p v) `((V ,v) ,p))
 
@@ -37,14 +43,17 @@
 
   (define (probcc-explore maxdepth choices)
    (letrec ((ans (make-hash-table))
+	    (times (op/times))
+	    (plus (op/plus))
             (loop (λ (p depth down choices susp)
                    (cond
                     ((null? choices) susp)
                     (else (let1/probccpair ((slot pt) (car choices)) 
-                           (let ((p*pt (* p pt))
-                                 (rest (cdr choices)))
+                           (let* ((p*pt (times p pt))
+				  (A (λ (w) (plus w p*pt)))
+				  (rest (cdr choices)))
                             (cond/probccslot slot
-                             ((V v) (hash-table-update!/default ans v (λ (w) (+ w p*pt)) 0)
+                             ((V v) (hash-table-update!/default ans v A 0)
                                     (loop p depth down rest susp))
                              ((C t) (cond 
                                      (down (loop p depth down rest
@@ -53,8 +62,9 @@
                                             (loop p depth down rest s)))))))))))))
     (let* ((susp (loop 1 0 #t choices '()))
            (f (λ (v p l) (cons (probcc-value p v) l)))
-           (folded (hash-table-fold ans f susp)))
-     (sort folded (λ (a b) (> (cadr a) (cadr b)))))))
+           (folded (hash-table-fold ans f susp))
+	   (greater (op/greater)))
+     (sort folded (λ (a b) (greater (cadr a) (cadr b)))))))
 
   (define (probcc-next-value choices)
     (cond
@@ -70,8 +80,10 @@
 								    (t))))))))))
 
   (define (probcc-normalize choices)
-    (let* ((tot (foldr (λ (each t) (+ t (cadr each))) 0 choices))
-           (N (λ (each) (list (car each) (exact->inexact (/ (cadr each) tot))))))
+    (let* ((divide (op/divide))
+	   (plus (op/plus))
+	   (tot (foldr (λ (each t) (plus t (cadr each))) 0 choices))
+           (N (λ (each) (list (car each) (divide (cadr each) tot)))))
       (map N choices)))
 
   (define (probcc-distribution distribution)
@@ -94,16 +106,18 @@
   ; Events and random variables.
   (define (probcc-impossible) (probcc-distribution '()))
   (define (probcc-unit v) (list (probcc-value 1 v)))
-  (define (probcc-bernoulli t f p) (probcc-distribution `((,t ,p) (,f ,(- 1 p)))))
+  (define (probcc-bernoulli t f p) (probcc-distribution `((,t ,p) (,f ,((op/subtract) 1 p)))))
   (define (probcc-coin p) (probcc-bernoulli #t #f p))
   (define (probcc-uniform n)
     (cond
       ((equal? n 1) 0)
       ((> n 1) (letrec ((p (/ 1 n))
+			(plus (op/plus))
+			(subtract (op/subtract))
 			(loop (λ (pacc acc i)
 				 (if (zero? i)
-				   (probcc-distribution (cons `(,i ,(- 1 pacc)) acc))
-				   (loop (+ pacc p) (cons `(,i ,p) acc) (sub1 i))))))
+				   (probcc-distribution (cons `(,i ,(subtract 1 pacc)) acc))
+				   (loop (plus pacc p) (cons `(,i ,p) acc) (sub1 i))))))
 		 (loop 0 '() (sub1 n))))
       (else (error `(non-positive count ,n)))))
 
@@ -111,9 +125,10 @@
     (+ low (probcc-uniform (add1 (- high low)))))
 
   (define (probcc-geometric p)
-    (letrec ((loop (λ (n)
+    (letrec ((subtract (op/subtract))
+	     (loop (λ (n)
 		      (list (probcc-τ p (list (probcc-value 1 n)))
-			    (probcc-τ (- 1 p) (loop (add1 n)))))))
+			    (probcc-τ (subtract 1 p) (loop (add1 n)))))))
       (probcc-reflect (loop 0))))
 
   (define-syntax probcc-when

@@ -121,13 +121,12 @@
   (define (probcc-uniform/range low high)
     (+ low (probcc-uniform (add1 (- high low)))))
 
-  (define (probcc-geometric p value)
+  (define (probcc-geometric p)
     (letrec ((subtract (op/subtract))
-	     (increment (λ (v) ((op/plus) v 1)))
 	     (loop (λ (n)
 		      (list (probcc-τ p (list (probcc-value 1 n)))
-			    (probcc-τ (subtract 1 p) (loop (increment n)))))))
-      (probcc-reflect (loop value))))
+			    (probcc-τ (subtract 1 p) (loop (add1 n)))))))
+      (probcc-reflect (loop 0))))
 
   (define-syntax probcc-when
    (syntax-rules ()

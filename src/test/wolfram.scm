@@ -15,7 +15,11 @@
 (define (wolfram/joint-form result)
   `(MatrixForm
      (List ,@(letmap ((p result)) 
-		     `(Rule (Prob ,@(map second (cadr (car p)))) ,(cadr p))))))
+		     `(Rule (Prob ,@(map (λ (each)
+					    (cond
+					      ((procedure? each) 'proc)
+					      (else (second each)))) 
+					 (cadr (car p)))) ,(cadr p))))))
 
 (define-suite hansei-symbolic-suite
 
@@ -142,7 +146,7 @@
 
 
   ((test/geometric _)
-   (define result ((probcc-reify (τ (probcc-geometric 'p 'v))) 5))
+   (define result ((probcc-reify (τ (probcc-geometric 'p))) 5))
    (define t6 (cadr (car (sixth result))))
    (define t7 (cadr (car (seventh result))))
    (define t8 (cadr (car (eighth result))))
@@ -157,7 +161,8 @@
        result)
    `(doc (container (escape ,(->MathML `(MatrixForm
                                           (List ,@(letmap ((p result)) 
-                                                          `(Rule (p (cadr (car p))) ,(cadr p))))) rule/MathML/display/block)))))
+                                                          `(Rule (p ,(cadr (car p))) ,(cadr p)))))
+                                       rule/MathML/display/block)))))
 
   )
 

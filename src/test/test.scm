@@ -41,18 +41,16 @@
 		monad that represents a stochastic computation as a lazy search
 		tree. That is, our implementation uses the type constructor " (code/inline "pV") 
                 " defined below.  "
-                (code/lang "" 
-                           "type 'a vc = V of 'a | C of (unit -> 'a pV)\n"
-                           "and 'a pV = (prob * 'a vc) list")
+                (code/lang "ocaml" "type 'a vc = V of 'a | C of (unit -> 'a pV) and 'a pV = (prob * 'a vc) list")
                 "Each node in a tree is a weighted list of branches. The empty
 		list denotes failure, and a singleton list " (code/inline "[(p, V v)]") 
                 " denotes a deterministic successful outcome" (code/inline v) "with the
 		probability mass " (code/inline p) ". A branch of the form "
-                (code/inline "V v") " is a leaf node
+		(code/inline "V v") " is a leaf node
 		that describes a possible successful outcome, whereas a branch
 		of the form " (code/inline "C thunk") " is not yet explored.
-		The intended meaning of a search tree of type " (code/inline
-                                                                                                                                                                                                                                                                  "'a pV") " is a discrete probability distribution over values of type "
+		The intended meaning of a search tree of type " (code/inline "'a pV") 
+		" is a discrete probability distribution over values of type "
                 (code/inline "'a") ". ")
 
              (code/scheme/file "../hansei.scm")))
@@ -131,7 +129,6 @@
          (code/scheme ,(probcc-normalize result))
          "as required. The following test defines and captures this problem.")))
 
-
   ((test/procc/grass-model/complete _)
    (define-τ grass-model
      (let* ((rain (probcc-coin 0.3))
@@ -172,7 +169,7 @@
 	     (λ (a b) (< (cadr (car a)) (cadr (car b)))))))
 
   ((test/geometric _)
-   (define result ((probcc-reify (τ (probcc-geometric 0.85))) 5))
+   (define result ((probcc-reify (τ (probcc-geometric 0.85 0))) 5))
    (define t6 (cadr (car (sixth result))))
    (define t7 (cadr (car (seventh result))))
    (define t8 (cadr (car (eighth result))))

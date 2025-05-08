@@ -223,7 +223,7 @@
 
    (let* ((tree (flipxor-model 10 0.5))
           (res (probcc-reify/exact tree)))
-     (⊦= '(((V #t) 0.5) ((V #f) 0.5)) res)
+     (⊦= '(((V #f) 0.5) ((V #t) 0.5)) res)
      (⊦= 4 (probcc-leaves (probcc-reify/0 tree)))))
 
   ((test/procc/flip-xor-model/bucket _)

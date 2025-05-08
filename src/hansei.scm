@@ -72,12 +72,12 @@
       (else (let1/probccpair ((slot pt) (car choices)) 
 			     (cond/probccslot slot
 					      ((V v) (probcc-value pt v))
-					      ((C t) (probcc-next-value
-						       (append (cdr choices)
-							       (map (λ (pair)
-								       (let1/probccpair ((slot p) pair)
-											`(,slot ,(* p pt))))
-								    (t))))))))))
+					      ((C t) (let1 (times (op/times))
+							   (probcc-next-value
+							     (append (cdr choices)
+								     (letmap ((pair (t)))
+									     (let1/probccpair ((slot p) pair)
+											      `(,slot ,(times p pt)))))))))))))
 
   (define (probcc-normalize choices)
     (let* ((divide (op/divide))
@@ -87,15 +87,12 @@
       (map N choices)))
 
   (define (probcc-distribution distribution)
-    (letcc/shift k
-		 (map (λ (pair)
-			 (letcar&cdr (((v p) pair))
-				     (probcc-τ (car p) (k v))))
-		      distribution)))
+    (letcc/shift k (letmap ((pair distribution))
+			   (letcar&cdr (((v p) pair))
+				       (probcc-τ (car p) (k v))))))
 
   (define (probcc-reflect choices)
-    (letcc/shift k
-		 (letrec ((make-choices (λ (pv) (map f pv)))
+    (letcc/shift k (letrec ((make-choices (λ (pv) (map f pv)))
 			  (f (λ (probpair)
 				(let1/probccpair ((slot p) probpair)
 						 (cond/probccslot slot

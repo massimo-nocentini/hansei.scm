@@ -42,10 +42,9 @@
        (else (error `(not a probability slot ,slot))))))))
 
   (define (probcc-explore maxdepth choices)
-   (letrec ((ans (make-hash-table))
-	    (times (op/times))
+   (letrec ((times (op/times))
 	    (plus (op/plus))
-            (loop (λ (p depth down choices susp)
+            (loop (λ (p depth down choices ans susp)
                    (cond
                     ((null? choices) susp)
                     (else (let1/probccpair ((slot pt) (car choices)) 
@@ -54,17 +53,18 @@
 				  (rest (cdr choices)))
                             (cond/probccslot slot
                              ((V v) (hash-table-update!/default ans v A 0)
-                                    (loop p depth down rest susp))
+                                    (loop p depth down rest ans susp))
                              ((C t) (cond 
-                                     (down (loop p depth down rest
-                                            (loop p*pt (add1 depth) (< depth maxdepth) (t) susp)))
+                                     (down (loop p depth down rest ans
+                                            (loop p*pt (add1 depth) (< depth maxdepth) (t) ans susp)))
                                      (else (let1 (s (cons (probcc-τ p*pt (t)) susp))
-                                            (loop p depth down rest s)))))))))))))
-    (let* ((susp (loop 1 0 #t choices '()))
-           (f (λ (v p l) (cons (probcc-value p v) l)))
-           (folded (hash-table-fold ans f susp))
+                                            (loop p depth down rest ans s)))))))))))))
+    (let* ((ans (make-hash-table))
+	   (susp (loop 1 0 #t choices ans '()))
+	   (f (λ (v p l) (cons (probcc-value p v) l)))
+	   (folded (hash-table-fold ans f susp))
 	   (greater (op/greater)))
-     (sort folded (λ (a b) (greater (cadr a) (cadr b)))))))
+      (sort folded (λ (a b) (greater (cadr a) (cadr b)))))))
 
   (define (probcc-next-value choices)
     (cond

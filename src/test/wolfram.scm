@@ -146,7 +146,7 @@
 
 
   ((test/geometric _)
-   (define result ((probcc-reify (τ (probcc-geometric 'p))) 5))
+   (define result ((probcc-reify (τ (probcc-geometric 'p 's 'f))) 5))
    (define t6 (cadr (car (sixth result))))
    (define t7 (cadr (car (seventh result))))
    (define t8 (cadr (car (eighth result))))
@@ -161,7 +161,8 @@
        result)
    `(doc (container (escape ,(->MathML `(MatrixForm
                                           (List ,@(letmap ((p result)) 
-                                                          `(Rule (p ,(cadr (car p))) ,(cadr p)))))
+                                                          `(Rule (p ,(let1 (v (cadr (car p))) 
+									   (if (procedure? v) v `(List ,@v)))) ,(cadr p)))))
                                        rule/MathML/display/block)))))
 
   )

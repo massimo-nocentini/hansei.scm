@@ -71,7 +71,7 @@
       ((null? choices) '())
       (else (let1/probccpair ((slot pt) (car choices)) 
 			     (cond/probccslot slot
-					      ((V v) (probcc-value pt v))
+					      ((V v) choices)
 					      ((C t) (let1 (times (op/times))
 							   (probcc-next-value
 							     (append (cdr choices)
@@ -121,12 +121,12 @@
   (define (probcc-uniform/range low high)
     (+ low (probcc-uniform (add1 (- high low)))))
 
-  (define (probcc-geometric p)
+  (define (probcc-geometric p s f)
     (letrec ((subtract (op/subtract))
 	     (loop (λ (n)
-		      (list (probcc-τ p (list (probcc-value 1 n)))
-			    (probcc-τ (subtract 1 p) (loop (add1 n)))))))
-      (probcc-reflect (loop 0))))
+		      (list (probcc-τ p (list (probcc-value 1 (cons s n))))
+			    (probcc-τ (subtract 1 p) (loop (cons f n)))))))
+      (probcc-reflect (loop '()))))
 
   (define-syntax probcc-when
    (syntax-rules ()

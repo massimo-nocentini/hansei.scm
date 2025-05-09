@@ -169,7 +169,7 @@
 	     (λ (a b) (< (cadr (car a)) (cadr (car b)))))))
 
   ((test/geometric _)
-   (define result ((probcc-reify (τ (probcc-geometric 0.85))) 5))
+   (define result ((probcc-reify (τ (probcc-geometric 0.85 's 'f))) 5))
    (define t6 (cadr (car (sixth result))))
    (define t7 (cadr (car (seventh result))))
    (define t8 (cadr (car (eighth result))))

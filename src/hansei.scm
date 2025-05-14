@@ -134,6 +134,7 @@
 			 (test body ...) 
 			 (else (probcc-impossible))))))
 
+
   (define (probcc-reify/0 model) (resetcc (probcc-unit (model))))
   (define ((probcc-reify model) depth) (probcc-explore depth (probcc-reify/0 model)))
   (define (probcc-reify/exact model) ((probcc-reify model) +inf.0))

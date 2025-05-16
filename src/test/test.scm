@@ -61,40 +61,38 @@
            ((V ((x #f) (y #t))) 0.24)
            ((V ((x #f) (y #f))) 0.16))
          (probcc-normalize
-           (probcc-reify/exact
-             (τ
-               (let* ((p 0.6)
-                      (x (probcc-coin p))
-                      (y (probcc-coin p)))
-                 `((x ,x) (y ,y)))))))
+	   (probcc-reify/exact
+	     (let* ((p 0.6)
+		    (x (probcc-coin p))
+		    (y (probcc-coin p)))
+	       `((x ,x) (y ,y))))))
    `(doc (p "Joint distribution of tossing two " (i "biased") 
             " coins, where head has probability " (code/inline 0.6)
             " to appear.")))
 
   ((test/procc/coin-model/when _)
    (⊦= '(((V (#t #t)) 0.428571428571429)
-           ((V (#t #f)) 0.285714285714286)
-           ((V (#f #t)) 0.285714285714286))
-         (probcc-normalize
-           (probcc-reify/exact
-             (τ
-               (let* ((p 0.6)
-                      (x (probcc-coin p))
-                      (y (probcc-coin p)))
-                 (probcc-when (or x y) (list x y)))))))
+	     ((V (#t #f)) 0.285714285714286)
+	     ((V (#f #t)) 0.285714285714286))
+       (probcc-normalize
+	 (probcc-reify/exact
+	   (let* ((p 0.6)
+		  (x (probcc-coin p))
+		  (y (probcc-coin p)))
+	     (probcc-when (or x y) (list x y))))))
    `(doc (p "Slightly variation of the previous test, here it has been " 
             (b "observed") " that " (i "at least one head") " appeared.")))
 
   ((test/procc/grass-model _)
-   (define-τ grass-model
-     (let* ((rain (probcc-coin 0.3))
-            (sprinkler (probcc-coin 0.5))
-            (grass-is-wet
-              (or (and (probcc-coin 0.9) rain)
-                  (and (probcc-coin 0.8) sprinkler)
-                  (probcc-coin 0.1))))
-       (probcc-when grass-is-wet `(rain ,rain))))
-   (define result (probcc-reify/exact grass-model))
+   (define result 
+     (probcc-reify/exact 
+       (let* ((rain (probcc-coin 0.3))
+	      (sprinkler (probcc-coin 0.5))
+	      (grass-is-wet
+		(or (and (probcc-coin 0.9) rain)
+		    (and (probcc-coin 0.8) sprinkler)
+		    (probcc-coin 0.1))))
+	 (probcc-when grass-is-wet `(rain ,rain)))))
    (⊦= (list (probcc-value 0.322 '(rain #f)) 
                (probcc-value 0.2838 '(rain #t)))
          result)
@@ -130,17 +128,17 @@
          "as required. The following test defines and captures this problem.")))
 
   ((test/procc/grass-model/complete _)
-   (define-τ grass-model
-     (let* ((rain (probcc-coin 0.3))
-            (sprinkler (probcc-coin 0.5))
-            (grass-is-wet
-              (or (and (probcc-coin 0.9) rain)
-                  (and (probcc-coin 0.8) sprinkler)
-                  (probcc-coin 0.1))))
-       `((rain ,rain) 
-         (sprinkler ,sprinkler)
-         (grass-is-wet ,grass-is-wet))))
-   (define result (probcc-reify/exact grass-model))
+   (define result 
+     (probcc-reify/exact 
+       (let* ((rain (probcc-coin 0.3))
+	      (sprinkler (probcc-coin 0.5))
+	      (grass-is-wet
+		(or (and (probcc-coin 0.9) rain)
+		    (and (probcc-coin 0.8) sprinkler)
+		    (probcc-coin 0.1))))
+	 `((rain ,rain) 
+	   (sprinkler ,sprinkler)
+	   (grass-is-wet ,grass-is-wet)))))
    (⊦= '(((V ((rain #f) (sprinkler #f) (grass-is-wet #f))) 0.315)
            ((V ((rain #f) (sprinkler #t) (grass-is-wet #t))) 0.287)
            ((V ((rain #t) (sprinkler #t) (grass-is-wet #t))) 0.1473)
@@ -165,11 +163,11 @@
            ((V 6) 1/8)
            ((V 7) 1/8)
            ((V 8) 1/8)) 
-       (sort (probcc-reify/exact (τ (probcc-uniform/range 1 8)))
+       (sort (probcc-reify/exact (probcc-uniform/range 1 8))
 	     (λ (a b) (< (cadr (car a)) (cadr (car b)))))))
 
   ((test/geometric _)
-   (define result ((probcc-reify (τ (probcc-geometric 0.85 's 'f))) 5))
+   (define result ((probcc-reify 5) (τ (probcc-geometric 0.85 's 'f))))
    (define t6 (cadr (car (sixth result))))
    (define t7 (cadr (car (seventh result))))
    (define t8 (cadr (car (eighth result))))

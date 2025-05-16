@@ -136,15 +136,18 @@
 
 
   (define (probcc-reify/0 model) (resetcc (probcc-unit (model))))
-  (define ((probcc-reify model) depth) (probcc-explore depth (probcc-reify/0 model)))
-  (define (probcc-reify/exact model) ((probcc-reify model) +inf.0))
+  (define ((probcc-reify depth) model) (probcc-explore depth (probcc-reify/0 model)))
+  (define probcc-reify/exact/a (probcc-reify +inf.0))
+
+  (define-syntax probcc-reify/exact
+    (syntax-rules ()
+      ((_ body ...) (probcc-reify/exact/a (τ body ...)))))
 
   (define-syntax λ-probcc-bucket
    (syntax-rules ()
     ((_ args body ...) (letrec ((f (λ args body ...))
                                 (bucket (λ-memo bargs 
-						(probcc-reify/exact 
-						  (τ (apply f bargs))))))
+						(probcc-reify/exact (apply f bargs)))))
                         (o probcc-reflect bucket)))))
 
   (define (probcc-leaves choices)

@@ -168,28 +168,52 @@
                                        rule/MathML/display/block)))))
 
   ((test/flip _)
+
    (define-τ model
      (let loop ((p 'p) (n 10))
        (cond
          ((equal? 1 n) (probcc-coin p))
-         (else (and (probcc-coin p) (loop p (sub1 n)))))))
+         (else (not (equal? (probcc-coin p) (loop p (sub1 n))))))))
 
    (define result (probcc-reify/exact (model)))
 
-   (⊦= '(((V #f) (Plus 1 (Times -1 (Power p 10)))) ((V #t) (Power p 10))) result)
-   (⊦= 11 (probcc-leaves (probcc-reify/0 model)))
-   `(doc (container (escape ,(->MathML (second (first result)) rule/MathML/display/block)))))
+   (⊦= '(((V #f)
+            (Plus (Power (Plus -1 p) 10)
+                  (Times (Power p 2)
+                         (Plus 45
+                               (Times -360 p)
+                               (Times 1470 (Power p 2))
+                               (Times -3780 (Power p 3))
+                               (Times 6510 (Power p 4))
+                               (Times -7560 (Power p 5))
+                               (Times 5715 (Power p 6))
+                               (Times -2550 (Power p 7))
+                               (Times 511 (Power p 8))))))
+           ((V #t)
+            (Times 2
+                   p
+                   (Plus 5
+                         (Times -45 p)
+                         (Times 240 (Power p 2))
+                         (Times -840 (Power p 3))
+                         (Times 2016 (Power p 4))
+                         (Times -3360 (Power p 5))
+                         (Times 3840 (Power p 6))
+                         (Times -2880 (Power p 7))
+                         (Times 1280 (Power p 8))
+                         (Times -256 (Power p 9)))))) result)
+   (⊦= 1024 (probcc-leaves (probcc-reify/0 model)))
+   `(doc (container (escape ,(->MathML `(Expand ,(second (first result))) rule/MathML/display/block)))))
 
   ((test/flip-xor-model/middle _)
 
    (define (flipxor-model p)
      (letrec ((loop (λ (n)
-                        (cond
-                          ((equal? 1 n) (probcc-coin p))
-                          (else (not (equal? (probcc-coin p) 
-                                             (probcc-reflect
-                                               (probcc-reify/exact
-                                                 (loop (sub1 n)))))))))))
+		       (cond
+			 ((equal? 1 n) (probcc-coin p))
+			 (else (not 
+				 (equal? (probcc-coin p) 
+					 ((probcc-variable-elimination loop) (sub1 n)))))))))
        loop))
 
    ;(define tree (flipxor-model 'p))
@@ -220,8 +244,10 @@
                          (Times 1280 (Power p 8))
                          (Times -256 (Power p 9)))))) res)
    ;(⊦= 4 (probcc-leaves (probcc-reify/0 (tree 10))))
-   `(doc (container (escape ,(->MathML `(Expand ,(second (first res))) rule/MathML/display/block)))
-         (container (escape ,(->MathML `(Expand ,(second (second res))) rule/MathML/display/block)))))
+   `(doc (p "Variable elimination optimization: transform a stochastic function " (code/inline "a -> b") " to a generally faster function:")
+	 (code/lang ocaml "let variable_elim f arg = reflect (exact_reify (fun () -> f arg))")
+	 (p "The probability of " (i "tail") " is:")
+	 (container (escape ,(->MathML `(Expand ,(second (first res))) rule/MathML/display/block)))))
 
   ((test/flip-xor-model/bucket _)
 

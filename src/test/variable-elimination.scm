@@ -68,10 +68,21 @@
 (define-suite hansei-ve-suite
 
   ((doc r) `((structure/section "Variable elimination optimization")
+	     (p "In this document we report some tests about the following technique,")
+	     (cite/quote "Oleg Kiselyov" 
+			 "The optimization of reification followed by (partial) flattening and reflection
+			 gives rise to the inference technique known as " (b "variable elimination") 
+			 (cite/a "https://www.sciencedirect.com/science/article/pii/S0004370299000594"
+				 "Dechter, Rina. Bucket elimination: A unifying framework for probabilistic inference.")
+			 ". Its benefit is demonstrated by the following example, computing the XOR of n coin tosses.")
 	     (p "This trick transform a stochastic function " (code/inline "a -> b") " to a generally faster function:")
 	     (code/lang ocaml "let variable_elim f arg = reflect (exact_reify (fun () -> f arg))")
-	     (p "The probability of " (i "tail") " is:")
-	     (container (escape ,(->MathML `(Expand ,(second (first expected))) rule/MathML/display/block)))))
+	     (p "Using symbolic manipulation, we show that the probability of XOR of 10 coin tosses  to be " (i "tail") " is")
+	     (container (escape ,(->MathML `(Expand ,(second (first expected))) rule/MathML/display/block)))
+	     (p "provided that " (i "head") " has probability " (math (m p)) 
+		" to appear in each toss. Moreover, the coefficients are the 10th row of a known sequence " 
+		(cite/a "https://oeis.org/A082137" 
+			"A082137: Square array of transforms of binomial coefficients, read by antidiagonals.") ".")))
 
   ((test/exponential _)
 
@@ -110,6 +121,55 @@
    (define res (probcc-reify/exact ((flipxor-model 'p) 10)))
    (⊦= expanded-expected res))
 
+  ((test/bucket/generic _)
+
+   (define flipxor-model
+     (letrec ((loop (λ-probcc-bucket (n)
+                                      (cond
+                                        ((null? (cdr n)) (probcc-coin (car n)))
+                                        (else (let1 (r (loop (cdr n)))
+						    (not (equal? (probcc-coin (car n)) r))))))))
+       loop))
+
+   (define res (probcc-reify/exact (flipxor-model '(a b c d e))))
+   (⊦= '(((V #f)
+            (Plus 1
+                  (Times -1 c)
+                  (Times -1 d)
+                  (Times 2 c d)
+                  (Times -1 e)
+                  (Times 2 c e)
+                  (Times 2 d e)
+                  (Times -4 c d e)
+                  (Times b
+                         (Plus -1 (Times 2 c))
+                         (Plus -1 (Times 2 d))
+                         (Plus -1 (Times 2 e)))
+                  (Times -1
+                         a
+                         (Plus -1 (Times 2 b))
+                         (Plus -1 (Times 2 c))
+                         (Plus -1 (Times 2 d))
+                         (Plus -1 (Times 2 e)))))
+           ((V #t)
+            (Plus c
+                  d
+                  (Times -2 c d)
+                  e
+                  (Times -2 c e)
+                  (Times -2 d e)
+                  (Times 4 c d e)
+                  (Times -1
+                         b
+                         (Plus -1 (Times 2 c))
+                         (Plus -1 (Times 2 d))
+                         (Plus -1 (Times 2 e)))
+                  (Times a
+                         (Plus -1 (Times 2 b))
+                         (Plus -1 (Times 2 c))
+                         (Plus -1 (Times 2 d))
+                         (Plus -1 (Times 2 e)))))) res)
+   `(doc (container (escape ,(->MathML `(Factor ,(second (first res))) rule/MathML/display/block)))))
   )
 
 (unittest/✓ hansei-ve-suite)

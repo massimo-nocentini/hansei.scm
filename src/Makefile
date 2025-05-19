@@ -1,8 +1,14 @@
 
 
 test:
-	cd test && csi -s test.scm
-	cd test && csi -s wolfram.scm
+	cd test && time csi -s test.scm
+
+wolfram:
+	cd test && time csi -s wolfram.scm
+
+ve:
+	cd test && time csi -s variable-elimination.scm
+
 
 install:
 	chicken-install -sudo

@@ -173,7 +173,8 @@
      (let loop ((p 'p) (n 10))
        (cond
          ((equal? 1 n) (probcc-coin p))
-         (else (not (equal? (probcc-coin p) (loop p (sub1 n))))))))
+         (else (let1 (r (loop p (sub1 n)))
+		     (not (equal? (probcc-coin p) r)))))))
 
    (define result (probcc-reify/exact (model)))
 
@@ -211,12 +212,10 @@
      (letrec ((loop (λ (n)
 		       (cond
 			 ((equal? 1 n) (probcc-coin p))
-			 (else (not 
-				 (equal? (probcc-coin p) 
-					 ((probcc-variable-elimination loop) (sub1 n)))))))))
+			 (else (let1 (r ((probcc-variable-elimination loop) (sub1 n)))
+				     (not (equal? (probcc-coin p) r))))))))
        loop))
 
-   ;(define tree (flipxor-model 'p))
    (define res (probcc-reify/exact ((flipxor-model 'p) 10)))
    (⊦= '(((V #f)
             (Plus 1
@@ -243,7 +242,7 @@
                          (Times -2880 (Power p 7))
                          (Times 1280 (Power p 8))
                          (Times -256 (Power p 9)))))) res)
-   ;(⊦= 4 (probcc-leaves (probcc-reify/0 (tree 10))))
+   (⊦= 4 (probcc-leaves (probcc-reify/0 (τ ((flipxor-model 'p) 10)))))
    `(doc (p "Variable elimination optimization: transform a stochastic function " (code/inline "a -> b") " to a generally faster function:")
 	 (code/lang ocaml "let variable_elim f arg = reflect (exact_reify (fun () -> f arg))")
 	 (p "The probability of " (i "tail") " is:")

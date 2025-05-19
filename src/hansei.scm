@@ -149,8 +149,7 @@
   (define-syntax λ-probcc-bucket
     (syntax-rules ()
       ((_ args body ...) (letrec ((f (λ args body ...))
-                                  (bucket (λ-memo bargs 
-                                                   (probcc-reify/exact (apply f bargs)))))
+                                  (bucket (λ-memo bargs (probcc-reify/exact (apply f bargs)))))
                            (o probcc-reflect bucket)))))
 
   (define (probcc-leaves choices)

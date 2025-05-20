@@ -169,7 +169,12 @@
                          (Plus -1 (Times 2 c))
                          (Plus -1 (Times 2 d))
                          (Plus -1 (Times 2 e)))))) res)
-   `(doc (container (escape ,(->MathML `(Factor ,(second (first res))) rule/MathML/display/block)))))
+   `(doc (p "This test generalizes the previous one in the sense that each coin has a " (i "different") 
+	    " probability for " (i "head") "; in particular, the exact inference for the XOR of 5 such coins yields
+	    that " (i tail) " has probability:")
+	 (container (escape ,(->MathML (second (first res)) rule/MathML/display/block)))
+	 (p "provided that coin's head has probabilities " (math (m a)) ", " (math (m b)) ", "
+	    (math (m c)) ", "(math (m d)) " and "(math (m e)) ", respectively.")))
   )
 
 (unittest/✓ hansei-ve-suite)

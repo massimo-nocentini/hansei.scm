@@ -77,7 +77,10 @@
 			 ". Its benefit is demonstrated by the following example, computing the XOR of n coin tosses.")
 	     (p "This trick transform a stochastic function " (code/inline "a -> b") " to a generally faster function:")
 	     (code/lang ocaml "let variable_elim f arg = reflect (exact_reify (fun () -> f arg))")
-	     (p "Using symbolic manipulation, we show that the probability of XOR of 10 coin tosses  to be " (i "tail") " is")
+	     (p "According to the idea shown in " (cite/a "testsuite-hansei-symbolic-suite.html" 
+							  "Symbolic manipulation in Hansei: a new view on the " 
+							  (i "wet grass model") ".")
+		", using symbolic manipulation, we show that the probability of XOR of 10 coin tosses  to be " (i "tail") " is")
 	     (container (escape ,(->MathML `(Expand ,(second (first expected))) rule/MathML/display/block)))
 	     (p "provided that " (i "head") " has probability " (math (m p)) 
 		" to appear in each toss. Moreover, the coefficients are the 10th row of a known sequence " 
@@ -173,7 +176,7 @@
 	    " probability for " (i "head") "; in particular, the exact inference for the XOR of 5 such coins yields
 	    that " (i tail) " has probability:")
 	 (container (escape ,(->MathML (second (first res)) rule/MathML/display/block)))
-	 (p "provided that coin's head has probabilities " (math (m a)) ", " (math (m b)) ", "
+	 (p "provided that coin's heads have probabilities " (math (m a)) ", " (math (m b)) ", "
 	    (math (m c)) ", "(math (m d)) " and "(math (m e)) ", respectively.")))
   )
 

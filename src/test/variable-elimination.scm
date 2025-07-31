@@ -71,7 +71,7 @@
 	     (p "In this document we report some tests about the following technique,")
 	     (cite/quote "Oleg Kiselyov" 
 			 "The optimization of reification followed by (partial) flattening and reflection
-			 gives rise to the inference technique known as " (b "variable elimination") 
+			 gives rise to the inference technique known as " (b "variable elimination")  " "
 			 (cite/a "https://www.sciencedirect.com/science/article/pii/S0004370299000594"
 				 "Dechter, Rina. Bucket elimination: A unifying framework for probabilistic inference.")
 			 ". Its benefit is demonstrated by the following example, computing the XOR of n coin tosses.")
@@ -101,11 +101,12 @@
   ((test/var-elimination _)
 
    (define (flipxor-model p)
-     (letrec ((loop (λ (n)
+     (letrec ((loop (probcc-variable-elimination 
+		      (λ (n)
 		       (cond
 			 ((equal? 1 n) (probcc-coin p))
-			 (else (let1 (r ((probcc-variable-elimination loop) (sub1 n)))
-				     (not (equal? (probcc-coin p) r))))))))
+			 (else (let1 (r (loop (sub1 n)))
+				     (not (equal? (probcc-coin p) r)))))))))
        loop))
 
    (define res (probcc-reify/exact ((flipxor-model 'p) 10)))

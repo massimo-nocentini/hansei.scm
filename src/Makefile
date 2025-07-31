@@ -1,4 +1,5 @@
 
+all: test wolfram ve
 
 test:
 	cd test && time csi -s test.scm

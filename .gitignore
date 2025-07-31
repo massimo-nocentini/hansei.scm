@@ -5,3 +5,4 @@ src/hansei.install.sh
 src/hansei.link
 src/hansei.so
 src/hansei.static.o
+src/test/testsuite-hansei-ve-suite.html
